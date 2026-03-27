@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#7B2D3B">
+<title>🍷 Wine Cellar</title>
+<style>
+/* ─── Reset ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ─── Tokens ─── */
+:root {
+  --wine:     #7B2D3B;
+  --wine-d:   #5C1F2B;
+  --wine-l:   #A84055;
+  --gold:     #C8962E;
+  --amber-bg: #FFFBEB;
+  --amber-bd: #FCD34D;
+  --text:     #111827;
+  --muted:    #6B7280;
+  --border:   #E5E7EB;
+  --bg:       #F9FAFB;
+  --white:    #FFFFFF;
+  --radius:   12px;
+  --shadow:   0 2px 10px rgba(0,0,0,0.08);
+}
+
+/* ─── Base ─── */
+html, body { height: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  max-width: 560px;
+  margin: 0 auto;
+  min-height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* ─── Setup Screen ─── */
+#setup {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--white);
+  padding: 52px 24px 44px;
+}
+#setup.hidden { display: none; }
+
+.setup-logo  { font-size: 72px; margin-bottom: 20px; }
+.setup-title { font-size: 30px; font-weight: 800; color: var(--wine); margin-bottom: 8px; text-align: center; letter-spacing: -0.5px; }
+.setup-sub   { font-size: 15px; color: var(--muted); text-align: center; margin-bottom: 36px; line-height: 1.6; }
+
+.setup-card  {
+  width: 100%;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 14px;
+}
+.setup-card h3 { font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
+.setup-card p  { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 12px; }
+.setup-card a  { color: var(--wine); font-weight: 600; text-decoration: none; }
+
+.setup-input {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--white);
+  -webkit-appearance: none;
+}
+.setup-input:focus { outline: none; border-color: var(--wine); }
+.setup-note {
+  font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; font-style: italic;
+}
+.setup-note a { color: var(--wine); font-weight: 600; }
+
+.setup-callout {
+  width: 100%;
+  background: #FDF6F7; border: 1.5px solid #DEB8BE;
+  border-radius: 14px; padding: 16px 18px;
+  margin-bottom: 14px;
+}
+.setup-callout h3 { color: var(--wine); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+.setup-callout p  { color: var(--wine); font-size: 13px; line-height: 1.6; opacity: 0.85; }
+
+/* ─── App Shell ─── */
+#app { display: none; flex-direction: column; min-height: 100vh; }
+#app.visible { display: flex; }
+
+/* ─── Header ─── */
+.app-header {
+  background: var(--wine);
+  color: white;
+  padding: 14px 16px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 2px 12px rgba(91,31,43,0.35);
+}
+.header-logo  { font-size: 22px; flex-shrink: 0; }
+.header-title { font-size: 20px; font-weight: 800; flex: 1; letter-spacing: -0.3px; }
+.header-badge { background: rgba(255,255,255,0.22); border-radius: 999px; padding: 3px 11px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.refresh-btn  {
+  background: rgba(255,255,255,0.2);
+  border: none; color: white;
+  width: 36px; height: 36px;
+  border-radius: 50%; font-size: 18px;
+  cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background 0.15s;
+}
+.refresh-btn:active { background: rgba(255,255,255,0.35); }
+.refresh-btn.spinning { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Tab Bar ─── */
+.tab-bar {
+  position: fixed; bottom: 0;
+  left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 560px;
+  background: var(--white);
+  border-top: 1px solid var(--border);
+  display: flex; z-index: 50;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.07);
+}
+.tab-btn {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 10px 4px 8px;
+  background: none; border: none;
+  cursor: pointer; color: var(--muted);
+  font-size: 10px; font-weight: 600;
+  gap: 3px; min-height: 60px;
+  transition: color 0.15s;
+  letter-spacing: 0.2px;
+}
+.tab-btn .tab-icon { font-size: 24px; line-height: 1; }
+.tab-btn.active { color: var(--wine); }
+
+/* ─── Content ─── */
+.content-wrap { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.tab-pane { display: none; padding: 14px 14px calc(78px + env(safe-area-inset-bottom, 0px)); }
+.tab-pane.active { display: block; }
+
+/* ─── Search ─── */
+.search-wrap { position: relative; margin-bottom: 14px; }
+.search-wrap input {
+  width: 100%;
+  padding: 12px 14px 12px 40px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  font-size: 16px; font-family: inherit;
+  background: var(--white); color: var(--text);
+  -webkit-appearance: none;
+}
+.search-wrap input:focus { outline: none; border-color: var(--wine); }
+.search-icon {
+  position: absolute; left: 13px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 17px; pointer-events: none;
+}
+
+/* ─── List Header ─── */
+.list-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.list-header h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; }
+.count-pill {
+  background: var(--wine); color: white;
+  border-radius: 999px; padding: 3px 12px;
+  font-size: 12px; font-weight: 700;
+}
+
+/* ─── Wine Cards ─── */
+.wine-card {
+  background: var(--white);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.card-main {
+  display: flex; align-items: center;
+  padding: 14px 12px 12px;
+  cursor: pointer; gap: 12px;
+  user-select: none;
+}
+.card-main:active { background: #fafafa; }
+
+.card-icon {
+  width: 52px; height: 52px; flex-shrink: 0;
+  background: linear-gradient(135deg, #F3E8E9, #EDD5D8);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+}
+.card-body { flex: 1; min-width: 0; }
+.card-name {
+  font-size: 15px; font-weight: 800;
+  color: var(--text); margin-bottom: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  letter-spacing: -0.2px;
+}
+.card-winery { font-size: 12px; color: var(--wine); font-weight: 600; margin-bottom: 6px; }
+.card-tags   { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 2px 7px;
+  font-size: 11px; color: var(--muted); font-weight: 500;
+  white-space: nowrap;
+}
+.tag-wine  { background: #FDF6F7; border-color: #DEB8BE; color: var(--wine); }
+.tag-score { background: #FFFBEB; border-color: #FCD34D; color: #92400E; font-weight: 700; }
+
+.card-chevron {
+  font-size: 22px; color: var(--muted);
+  transition: transform 0.2s; flex-shrink: 0;
+  font-weight: 300; line-height: 1;
+}
+
+/* ─── Expandable Detail ─── */
+.card-detail {
+  display: none;
+  border-top: 1px solid var(--border);
+  padding: 14px 14px 16px;
+  background: var(--bg);
+}
+.card-detail.open { display: block; }
+
+.detail-row {
+  display: flex; gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px; line-height: 1.5;
+}
+.detail-row:last-child { border-bottom: none; }
+.detail-row.notes { flex-direction: column; gap: 4px; }
+.detail-label {
+  font-size: 11px; font-weight: 700;
+  color: var(--muted); text-transform: uppercase;
+  letter-spacing: 0.4px; min-width: 90px;
+  flex-shrink: 0; padding-top: 1px;
+}
+.detail-val { color: var(--text); flex: 1; }
+.detail-val.italic { font-style: italic; color: var(--muted); }
+.drink-window-bar {
+  height: 6px; background: var(--border);
+  border-radius: 3px; margin: 6px 0 2px;
+  position: relative; overflow: hidden;
+}
+.drink-window-fill {
+  height: 100%; background: linear-gradient(90deg, var(--wine), var(--gold));
+  border-radius: 3px;
+}
+
+/* ─── Empty & Error States ─── */
+.empty-state {
+  text-align: center; padding: 60px 24px;
+}
+.empty-icon { font-size: 56px; margin-bottom: 14px; }
+.empty-state h3 { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.empty-state p  { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+.error-card {
+  background: var(--white); border: 1.5px solid #FCA5A5;
+  border-radius: 16px; padding: 24px;
+  text-align: center; margin: 8px 0;
+  color: #991B1B;
+}
+
+/* ─── Settings ─── */
+.settings-block {
+  background: var(--white); border-radius: var(--radius);
+  border: 1px solid var(--border); margin-bottom: 14px; overflow: hidden;
+}
+.settings-block-title {
+  padding: 11px 16px; font-size: 11px;
+  font-weight: 800; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.8px;
+  border-bottom: 1px solid var(--border); background: var(--bg);
+}
+.settings-row { padding: 16px; border-bottom: 1px solid var(--border); }
+.settings-row:last-child { border-bottom: none; }
+.settings-row label { display: block; font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+.settings-row input {
+  width: 100%; padding: 12px 14px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  font-size: 15px; color: var(--text); background: var(--white);
+  font-family: inherit; -webkit-appearance: none;
+}
+.settings-row input:focus { outline: none; border-color: var(--wine); }
+.settings-row p   { font-size: 13px; color: var(--muted); margin-top: 8px; line-height: 1.6; }
+.settings-row a   { color: var(--wine); font-weight: 600; text-decoration: none; }
+.settings-row .mono { font-family: 'SF Mono', Menlo, monospace; font-size: 12px; word-break: break-all; }
+
+.how-to-steps { margin: 8px 0 0; padding: 0; list-style: none; }
+.how-to-steps li {
+  display: flex; gap: 10px;
+  font-size: 13px; color: var(--muted);
+  line-height: 1.5; padding: 4px 0;
+}
+.step-num {
+  width: 20px; height: 20px;
+  background: var(--wine); color: white;
+  border-radius: 50%; font-size: 11px;
+  font-weight: 800; display: flex;
+  align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+
+/* ─── Buttons ─── */
+.btn {
+  display: block; width: 100%;
+  padding: 15px; border: none;
+  border-radius: var(--radius);
+  font-size: 16px; font-weight: 700;
+  cursor: pointer; text-align: center;
+  font-family: inherit;
+  transition: transform 0.1s, opacity 0.15s;
+}
+.btn:active { transform: scale(0.98); }
+.btn + .btn { margin-top: 10px; }
+.btn-wine  { background: var(--wine);  color: white; }
+.btn-ghost { background: var(--bg);    color: var(--text); border: 1.5px solid var(--border); }
+
+/* ─── Loading Overlay ─── */
+#loading-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(255,255,255,0.88);
+  z-index: 200;
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 14px;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+#loading-overlay.visible { display: flex; }
+.loader-text { font-size: 14px; font-weight: 600; color: var(--wine); }
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid #DEB8BE;
+  border-top-color: var(--wine);
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+}
+
+/* ─── Last Updated ─── */
+.last-updated {
+  text-align: center; font-size: 12px;
+  color: var(--muted); padding: 8px 0 0;
+}
+
+/* ─── Toast ─── */
+.toast {
+  position: fixed;
+  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  left: 50%; transform: translateX(-50%) translateY(10px);
+  background: #111827; color: white;
+  padding: 11px 20px; border-radius: 999px;
+  font-size: 14px; font-weight: 600;
+  z-index: 300; white-space: nowrap;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.22);
+  max-width: calc(100vw - 32px);
+  text-align: center;
+}
+.toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════
+     SETUP SCREEN
+══════════════════════════ -->
+<div id="setup">
+  <div class="setup-logo">🍷</div>
+  <h1 class="setup-title">Wine Cellar</h1>
+  <p class="setup-sub">Enter your Google Sheets API key to load your cellar.<br>You only need to do this once on this device.</p>
+
+  <div class="setup-card">
+    <h3>Google Sheets API Key</h3>
+    <p>A read-only API key — the app only reads your sheet, it never writes from your phone.</p>
+    <input class="setup-input" type="text" id="setup-key"
+           placeholder="AIzaSy…" autocomplete="off" autocorrect="off" spellcheck="false"
+           inputmode="text">
+    <div class="setup-note">
+      Get one at <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a> →
+      Create Credentials → API key.<br>
+      Enable the <strong>Google Sheets API</strong> for your project.
+    </div>
+  </div>
+
+  <div class="setup-card">
+    <h3>Sheet ID</h3>
+    <p>Pre-filled with your cellar's Sheet ID. Edit if needed.</p>
+    <input class="setup-input" type="text" id="setup-sid"
+           value="1f0JCnu7qPU5GUJ_wUTPIlGs74e9jVMhb_h_yfF51X-8"
+           autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+
+  <div class="setup-callout">
+    <h3>⚠️ One required step</h3>
+    <p>In Google Sheets, click <strong>Share → Change to anyone with the link → Viewer</strong>. Otherwise the API key cannot read the data.</p>
+  </div>
+
+  <button class="btn btn-wine" style="width:100%;margin-top:4px;" onclick="completeSetup()">
+    Open My Cellar →
+  </button>
+</div>
+
+
+<!-- ══════════════════════════
+     MAIN APP
+══════════════════════════ -->
+<div id="app">
+
+  <header class="app-header">
+    <span class="header-logo">🍷</span>
+    <h1 class="header-title">Wine Cellar</h1>
+    <span class="header-badge" id="header-badge">—</span>
+    <button class="refresh-btn" id="refresh-btn" onclick="loadData()" title="Refresh">↻</button>
+  </header>
+
+  <div class="content-wrap">
+
+    <!-- ── CELLAR TAB ── -->
+    <div class="tab-pane active" id="pane-cellar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="search" id="search-input" placeholder="Search name, winery, region, grape…"
+               autocorrect="off" spellcheck="false"
+               oninput="filterCellar(this.value)">
+      </div>
+      <div class="list-header">
+        <h2>My Cellar</h2>
+        <span class="count-pill" id="cellar-count">—</span>
+      </div>
+      <div id="cellar-list"></div>
+      <div class="last-updated" id="last-updated"></div>
+    </div>
+
+    <!-- ── TASTED TAB ── -->
+    <div class="tab-pane" id="pane-tasted">
+      <div class="list-header">
+        <h2>Tasted</h2>
+        <span class="count-pill" id="tasted-count">—</span>
+      </div>
+      <div id="tasted-list"></div>
+    </div>
+
+    <!-- ── SETTINGS TAB ── -->
+    <div class="tab-pane" id="pane-settings">
+      <div id="settings-content"></div>
+    </div>
+
+  </div><!-- /content-wrap -->
+
+  <!-- Tab Bar -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" id="tab-cellar" onclick="switchTab('cellar')">
+      <span class="tab-icon">🍾</span>
+      <span>Cellar</span>
+    </button>
+    <button class="tab-btn" id="tab-tasted" onclick="switchTab('tasted')">
+      <span class="tab-icon">✓</span>
+      <span>Tasted</span>
+    </button>
+    <button class="tab-btn" id="tab-settings" onclick="switchTab('settings')">
+      <span class="tab-icon">⚙️</span>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+</div><!-- /app -->
+
+
+<!-- ── Loading overlay ── -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loader-text">Loading your cellar…</div>
+</div>
+
+<!-- ── Toast ── -->
+<div class="toast" id="toast"></div>
+
+
+<!-- ══════════════════════════
+     JAVASCRIPT
+══════════════════════════ -->
+<script>
+'use strict';
+
+/* ─── Constants ─── */
+const DEFAULT_SHEET_ID = '1f0JCnu7qPU5GUJ_wUTPIlGs74e9jVMhb_h_yfF51X-8';
+
+// Column indices — Cellar tab
+const CC = { name:0, vintage:1, region:2, grape:3, winery:4,
+             rating:5, price:6, qty:7, dateAdded:8, notes:9 };
+// Column indices — Drunk tab (same first 10, then extras)
+const CD = { name:0, vintage:1, region:2, grape:3, winery:4,
+             rating:5, price:6, qty:7, dateAdded:8, notes:9,
+             dateDrunk:10, myScore:11, myNotes:12 };
+
+/* ─── State ─── */
+let allCellar   = [];
+let allTasted   = [];
+let filterText  = '';
+let lastUpdated = null;
+
+/* ─── Init ─── */
+window.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('sheetsApiKey')) {
+    showApp();
+    loadData();
+  }
+});
+
+/* ─── Setup ─── */
+function completeSetup() {
+  const key = document.getElementById('setup-key').value.trim();
+  const sid = document.getElementById('setup-sid').value.trim();
+  if (!key) { showToast('Please enter your API key'); return; }
+  localStorage.setItem('sheetsApiKey', key);
+  localStorage.setItem('sheetId', sid || DEFAULT_SHEET_ID);
+  showApp();
+  loadData();
+}
+
+function showApp() {
+  document.getElementById('setup').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+}
+
+/* ─── Load Data ─── */
+async function loadData() {
+  const apiKey  = localStorage.getItem('sheetsApiKey');
+  const sheetId = localStorage.getItem('sheetId') || DEFAULT_SHEET_ID;
+
+  setLoading(true);
+
+  const btn = document.getElementById('refresh-btn');
+  btn.classList.add('spinning');
+
+  try {
+    const base = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sheetId)}/values`;
+    const key  = encodeURIComponent(apiKey);
+
+    const [r1, r2] = await Promise.all([
+      fetch(`${base}/Cellar?key=${key}`),
+      fetch(`${base}/Drunk?key=${key}`)
+    ]);
+
+    // Diagnose errors clearly
+    if (!r1.ok) {
+      const e = await r1.json().catch(() => ({}));
+      const code = r1.status;
+      if (code === 403) throw new Error('Access denied (403). Make the sheet "Anyone with link → Viewer" in Google Sheets → Share.');
+      if (code === 400) throw new Error('Invalid API key (400). Check your key in Settings.');
+      if (code === 404) throw new Error('Sheet not found (404). Check the Sheet ID in Settings.');
+      throw new Error((e.error?.message || 'Error ' + code) + ' — check Settings.');
+    }
+
+    const d1 = await r1.json();
+    const d2 = r2.ok ? await r2.json() : { values: [] };
+
+    allCellar = parseRows(d1.values || [], CC);
+    allTasted = parseRows(d2.values || [], CD);
+
+    lastUpdated = new Date();
+    renderCellar();
+    renderTasted();
+    updateBadge();
+
+    const n = allCellar.length;
+    showToast(`✓ ${n} bottle${n !== 1 ? 's' : ''} in cellar`);
+
+  } catch (e) {
+    setLoading(false);
+    btn.classList.remove('spinning');
+    renderError(e.message);
+    showToast('⚠️ ' + e.message.slice(0, 60));
+    return;
+  }
+
+  setLoading(false);
+  btn.classList.remove('spinning');
+}
+
+/* ─── Parse Sheet Rows ─── */
+function parseRows(values, cols) {
+  if (!values || values.length < 2) return [];
+  return values.slice(1)
+    .filter(r => r && (r[cols.name] || '').trim())
+    .map(r => {
+      const g = i => (r[i] || '').trim();
+      return {
+        name:      g(cols.name),
+        vintage:   g(cols.vintage),
+        region:    g(cols.region),
+        grape:     g(cols.grape),
+        winery:    g(cols.winery),
+        rating:    g(cols.rating),
+        price:     g(cols.price),
+        qty:       g(cols.qty),
+        dateAdded: g(cols.dateAdded),
+        notes:     g(cols.notes),
+        dateDrunk: cols.dateDrunk !== undefined ? g(cols.dateDrunk) : '',
+        myScore:   cols.myScore   !== undefined ? g(cols.myScore)   : '',
+        myNotes:   cols.myNotes   !== undefined ? g(cols.myNotes)   : '',
+      };
+    });
+}
+
+/* ─── Tab Switching ─── */
+function switchTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('pane-' + name).classList.add('active');
+  document.getElementById('tab-'  + name).classList.add('active');
+  if (name === 'settings') renderSettings();
+}
+
+/* ─── Cellar Rendering ─── */
+function filterCellar(text) {
+  filterText = (text || '').toLowerCase().trim();
+  renderCellar();
+}
+
+function renderCellar() {
+  const list = document.getElementById('cellar-list');
+  let wines = allCellar;
+
+  if (filterText) {
+    wines = wines.filter(w =>
+      [w.name, w.winery, w.vintage, w.region, w.grape, w.grape]
+        .join(' ').toLowerCase().includes(filterText)
+    );
+  }
+
+  // Sort: vintage desc, then name asc
+  wines = [...wines].sort((a, b) =>
+    (parseInt(b.vintage) || 0) - (parseInt(a.vintage) || 0)
+    || a.name.localeCompare(b.name)
+  );
+
+  document.getElementById('cellar-count').textContent = wines.length;
+
+  if (!wines.length) {
+    list.innerHTML = filterText
+      ? `<div class="empty-state">
+           <div class="empty-icon">🔍</div>
+           <h3>No matches</h3>
+           <p>Try searching by name, winery, region or grape</p>
+         </div>`
+      : `<div class="empty-state">
+           <div class="empty-icon">🍾</div>
+           <h3>Cellar is empty</h3>
+           <p>Add wines using the <strong>Add Wine</strong> task in Cowork on your Mac, then tap ↻ to refresh.</p>
+         </div>`;
+  } else {
+    list.innerHTML = wines.map((w, i) => wineCardHTML(w, i, 'cellar')).join('');
+  }
+
+  const lu = document.getElementById('last-updated');
+  if (lastUpdated) {
+    lu.textContent = 'Updated ' + lastUpdated.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  }
+}
+
+/* ─── Tasted Rendering ─── */
+function renderTasted() {
+  const list  = document.getElementById('tasted-list');
+  const wines = [...allTasted].sort((a, b) =>
+    (b.dateDrunk || '').localeCompare(a.dateDrunk || '')
+  );
+
+  document.getElementById('tasted-count').textContent = wines.length;
+
+  if (!wines.length) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">✓</div>
+      <h3>Nothing logged yet</h3>
+      <p>Mark wines as tasted using Cowork on your Mac — they'll appear here after a refresh.</p>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = wines.map((w, i) => wineCardHTML(w, i, 'tasted')).join('');
+}
+
+/* ─── Wine Card HTML ─── */
+function wineCardHTML(w, i, type) {
+  const id = `${type}-${i}`;
+  let detailRows = '';
+
+  if (type === 'cellar') {
+    if (w.rating)    detailRows += detailRow('Critic Rating', esc(w.rating));
+    if (w.price)     detailRows += detailRow('Price (AUD)',   esc(w.price));
+    if (w.dateAdded) detailRows += detailRow('Date Added',    esc(w.dateAdded));
+    if (w.qty)       detailRows += detailRow('Quantity',      esc(w.qty));
+    if (w.notes)     detailRows += detailRowNotes('Notes', esc(w.notes));
+  } else {
+    if (w.dateDrunk) detailRows += detailRow('Date Drunk',  esc(w.dateDrunk));
+    if (w.myScore)   detailRows += detailRow('My Score',    `<strong>${esc(w.myScore)}/100</strong>`);
+    if (w.rating)    detailRows += detailRow('Critic Score', esc(w.rating));
+    if (w.myNotes)   detailRows += detailRowNotes('My Notes',  `<span class="italic">"${esc(w.myNotes)}"</span>`);
+    if (w.notes)     detailRows += detailRowNotes('Pro Notes', esc(w.notes));
+  }
+
+  const hasDetail = !!detailRows;
+
+  return `
+  <div class="wine-card">
+    <div class="card-main" onclick="toggleCard('${id}')">
+      <div class="card-icon">🍷</div>
+      <div class="card-body">
+        <div class="card-name">${esc(w.name)}</div>
+        ${w.winery ? `<div class="card-winery">${esc(w.winery)}</div>` : ''}
+        <div class="card-tags">
+          ${w.vintage ? `<span class="tag tag-wine">${esc(w.vintage)}</span>` : ''}
+          ${w.grape   ? `<span class="tag">${esc(trunc(w.grape, 22))}</span>` : ''}
+          ${w.region  ? `<span class="tag">${esc(trunc(w.region, 22))}</span>` : ''}
+          ${w.qty && w.qty !== '1' ? `<span class="tag">×${esc(w.qty)}</span>` : ''}
+          ${w.price   ? `<span class="tag">${esc(w.price)}</span>` : ''}
+          ${type === 'tasted' && w.myScore ? `<span class="tag tag-score">★ ${esc(w.myScore)}</span>` : ''}
+        </div>
+      </div>
+      ${hasDetail ? `<div class="card-chevron" id="chev-${id}">›</div>` : ''}
+    </div>
+    ${hasDetail ? `<div class="card-detail" id="detail-${id}">${detailRows}</div>` : ''}
+  </div>`;
+}
+
+function detailRow(label, valHtml) {
+  return `<div class="detail-row">
+    <span class="detail-label">${label}</span>
+    <span class="detail-val">${valHtml}</span>
+  </div>`;
+}
+function detailRowNotes(label, valHtml) {
+  return `<div class="detail-row notes">
+    <span class="detail-label">${label}</span>
+    <span class="detail-val">${valHtml}</span>
+  </div>`;
+}
+
+function toggleCard(id) {
+  const detail = document.getElementById('detail-' + id);
+  const chev   = document.getElementById('chev-'   + id);
+  if (!detail) return;
+  const open = detail.classList.toggle('open');
+  if (chev) chev.textContent = open ? '⌄' : '›';
+}
+
+/* ─── Settings ─── */
+function renderSettings() {
+  const sid = esc(localStorage.getItem('sheetId') || DEFAULT_SHEET_ID);
+  const key = localStorage.getItem('sheetsApiKey') || '';
+
+  document.getElementById('settings-content').innerHTML = `
+    <div class="settings-block">
+      <div class="settings-block-title">Google Sheets Connection</div>
+      <div class="settings-row">
+        <label>API Key</label>
+        <input type="password" id="s-key"
+               value="${esc(key)}"
+               autocomplete="off" autocorrect="off" spellcheck="false"
+               placeholder="AIzaSy…">
+        <p>A read-only API key with the Sheets API enabled.
+          Get from <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a>.</p>
+      </div>
+      <div class="settings-row">
+        <label>Sheet ID</label>
+        <input type="text" id="s-sid" value="${sid}"
+               autocomplete="off" autocorrect="off" spellcheck="false">
+        <p>The long alphanumeric ID from your Google Sheets URL.</p>
+      </div>
+      <div class="settings-row">
+        <label>Required sharing setting</label>
+        <p>In your Google Sheet: <strong>Share → Change to Anyone with the link → Viewer</strong>. Without this, the API key returns a 403 error.</p>
+      </div>
+    </div>
+
+    <div class="settings-block">
+      <div class="settings-block-title">How to Add Wines</div>
+      <div class="settings-row">
+        <p>New wines are added from your Mac using Cowork's <strong>Add Wine</strong> skill — never from this app.</p>
+        <ul class="how-to-steps">
+          <li><span class="step-num">1</span>Open Cowork on your Mac</li>
+          <li><span class="step-num">2</span>Upload a photo of the wine label</li>
+          <li><span class="step-num">3</span>Cowork analyses the label, searches the web, and fills in all the details</li>
+          <li><span class="step-num">4</span>Confirm the details and it saves to your cellar</li>
+          <li><span class="step-num">5</span>Tap ↻ here to refresh</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="settings-block">
+      <div class="settings-block-title">Sheet Column Structure</div>
+      <div class="settings-row">
+        <label>Cellar tab</label>
+        <p class="mono">Name · Vintage · Region · Grape · Winery · Critic Rating · Price AUD · Quantity · Date Added · Notes</p>
+      </div>
+      <div class="settings-row">
+        <label>Drunk tab</label>
+        <p class="mono">…same 10… · Date Drunk · My Score · My Tasting Notes</p>
+      </div>
+      <div class="settings-row">
+        <label>Sheet ID</label>
+        <p class="mono">${sid}</p>
+      </div>
+    </div>
+
+    <button class="btn btn-wine" onclick="saveSettings()">Save &amp; Refresh</button>
+  `;
+}
+
+function saveSettings() {
+  const key = document.getElementById('s-key')?.value.trim();
+  const sid = document.getElementById('s-sid')?.value.trim();
+  if (key) localStorage.setItem('sheetsApiKey', key);
+  if (sid) localStorage.setItem('sheetId', sid);
+  showToast('✅ Settings saved');
+  switchTab('cellar');
+  loadData();
+}
+
+/* ─── Error Rendering ─── */
+function renderError(msg) {
+  document.getElementById('cellar-list').innerHTML = `
+    <div class="error-card">
+      <div style="font-size:36px;margin-bottom:12px;">⚠️</div>
+      <strong style="font-size:16px;">Couldn't load cellar</strong>
+      <p style="margin-top:10px;font-size:13px;line-height:1.6;">${esc(msg)}</p>
+      <button class="btn btn-wine" onclick="loadData()" style="margin-top:18px;">Try Again</button>
+      <button class="btn btn-ghost" onclick="switchTab('settings')" style="margin-top:10px;">Settings</button>
+    </div>`;
+  document.getElementById('cellar-count').textContent = '!';
+}
+
+/* ─── Helpers ─── */
+function updateBadge() {
+  const n = allCellar.length;
+  document.getElementById('header-badge').textContent = n + ' bottle' + (n !== 1 ? 's' : '');
+}
+
+function setLoading(on) {
+  const el = document.getElementById('loading-overlay');
+  el.classList.toggle('visible', on);
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function trunc(s, max) {
+  if (!s || s.length <= max) return s || '';
+  return s.slice(0, max) + '…';
+}
+
+let _tt;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('visible');
+  clearTimeout(_tt);
+  _tt = setTimeout(() => el.classList.remove('visible'), 3200);
+}
+</script>
+</body>
+</html>
